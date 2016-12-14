@@ -15,7 +15,7 @@ device_ids=$(echo $CUDA_DEVICE_VISIBLE | sed -e "s/,/ /g")
 for device_id in $device_ids
 do
   #lock file is specific for each ShARC node and each device combination (node_number is a SGE prolog variable)
-  lockfile=/tmp/lock_$(node_number)_device$(device_id)
+  lockfile=/tmp/lock_$node_number"_device"$device_id
   # Check dir exists then remove the lockfile
   if [ -d $lockfile ]
   then

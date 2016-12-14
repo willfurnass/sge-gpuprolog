@@ -31,7 +31,7 @@ device_ids=$(nvidia-smi -L | cut -f1 -d":" | cut -f2 -d" " | xargs shuf -e)
 for device_id in $device_ids
 do
   #lock file is specific for each ShARC node and each device combination (node_number is a SGE prolog variable)
-  lockfile=/tmp/lock_$(node_number)_device$(device_id)
+  lockfile=/tmp/lock_$node_number"_device"$device_id
   #use mkdir to obtain a lock (will fail if file exists)
   if mkdir $lockfile
   then

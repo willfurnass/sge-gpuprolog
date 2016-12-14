@@ -1,3 +1,9 @@
+# Authors: Mozhgan Kabiri Chimeh, Paul Richmond
+# Contact: m.kabiri-chimeh@sheffield.ac.uk
+#
+# Startup script to allocate GPU devices.
+# Based on https://github.com/kyamagu/sge-gpuprolog
+#
 #qstat script / this is the emulator
 
 #get environment varible 2 this would normally be the $JOB_ID. Use the Job ID as the number of devices that qstat should return
