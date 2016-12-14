@@ -1,0 +1,27 @@
+#qstat script / this is the emulator
+
+#get environment varible 2 this would normally be the $JOB_ID. Use the Job ID as the number of devices that qstat should return
+
+#echo Twins qstat ouptut but use arg 2 as the number of devices
+
+# to run :  ./qstat -j 3
+
+NUM_GPUS=$2 # this is normaly the $JOB_ID, but here we are using it as the NUM_GPUS
+
+# replaces the number of gpus already existed in the Twins qstat output with the one recieved from the user
+replace_func(){
+sed -i -e "s/gpu=[[:digit:]]/gpu=$NUM_GPUS/g" userTest
+}
+
+
+# Loop until all parameters are used up
+if [ "$2" != "" ]; then
+   replace_func
+fi
+
+cat userTest
+
+
+
+
+
