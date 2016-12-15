@@ -8,7 +8,7 @@
 #
 
 # Query how many gpus to allocate.Using qstat
-NGPUS=$(./qstat -j $JOB_ID | \
+NGPUS=$(qstat -j $JOB_ID | \
         sed -n "s/hard resource_list:.*gpu=\([[:digit:]]\+\).*/\1/p")
 if [ -z $NGPUS ] # check if NGPUS is null, then exit
 then

@@ -4,13 +4,10 @@
 # Startup script to allocate GPU devices.
 # Based on https://github.com/kyamagu/sge-gpuprolog
 #
-#qstat script / this is the emulator
+# The script is written to emulate the 'qstat' command. It gets the number of GPUs as the JOB_ID and replaces it with the number of GPUs in 'userTest' file and echos it.
+# Note that it gets environment varible that would normally be the $JOB_ID. We use the Job ID as the number of devices that qstat should return
 
-#get environment varible 2 this would normally be the $JOB_ID. Use the Job ID as the number of devices that qstat should return
-
-#echo Twins qstat ouptut but use arg 2 as the number of devices
-
-# to run :  ./qstat -j 3
+# To execute, simply run qstat -j $2, where $2 would be the number of GPUs
 
 NUM_GPUS=$2 # this is normaly the $JOB_ID, but here we are using it as the NUM_GPUS
 

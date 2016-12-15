@@ -6,14 +6,16 @@
 # Startup script to allocate GPU devices.
 # Based on https://github.com/kyamagu/sge-gpuprolog
 #
-# test script for both Prolog and Epilog
+# The script is written to test if both Prolog and Epilog scripts are working
+# For this purpose, we created another script called 'qstat' to emulate what the real 'qstat' command does.
+# To execute, simply run ./testPriloEpilog $1 , where $1 is the number of gpus. This is actually the $JOB_ID, but we as we use a fake one, we set this as the number of GPUs user requested
 
-#have a script file qstat which emulates what a qstat job would return
-#define JOB_ID
-#define node_id
+# The system will look for executables in current directory without a "./". 
+export PATH=$PATH:. 
 
-JOB_ID=1 # num gpus
-node_number=1 # user defined
+
+JOB_ID=$1 # num gpus
+node_number=$2 # user defined
 
 # Output the directory status list for lock files
 check_locks_func(){
@@ -42,7 +44,7 @@ echo "Current list of devices: $device_ids"
 #################################################
 
 echo "START ...."
-export JOB_ID=1 # num gpus
+export JOB_ID=$1 # num gpus
 export node_number=1 # user defined
 
 
