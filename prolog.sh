@@ -59,5 +59,6 @@ SGE_GPU="$(echo $SGE_GPU | sed -e 's/^ //' | sed -e 's/ /,/g')" # seperating dev
 
 # Set the environment.
 # IMPORTANT: You need to source this script (use source to execute it), so that the variable modified by the script will be available after the script completes
-export CUDA_DEVICE_VISIBLE=$SGE_GPU 
+export CUDA_VISIBLE_DEVICES=$SGE_GPU 
+
 exit 0

@@ -9,7 +9,8 @@
 
 
 # Reformat the list of device ids used by the job (into space seperated)
-device_ids=$(echo $CUDA_DEVICE_VISIBLE | sed -e "s/,/ /g")
+device_ids=$(echo $CUDA_VISIBLE_DEVICES | sed -e "s/,/ /g")
+echo "Epilog -> device ids: "$device_ids # test
 
 # Loop through through the device IDs and free the lockfile
 for device_id in $device_ids
@@ -20,6 +21,7 @@ do
   if [ -d $lockfile ]
   then
     rmdir -f $lockfile
+    echo "removed lock from $lockfile"
   fi
 done
 exit 0

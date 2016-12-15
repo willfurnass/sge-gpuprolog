@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Authors: Mozhgan Kabiri Chimeh, Paul Richmond
 # Contact: m.kabiri-chimeh@sheffield.ac.uk
@@ -28,7 +28,7 @@ do
   then
      echo "$lockfile exists"
   else
-     echo "no lock exists"
+     echo "no lock exists on $lockfile"
   fi
 done
 echo "------------------------------------"
@@ -52,13 +52,14 @@ deviceId_func
 check_locks_func
 
 echo "executing Prolog ..................."
-echo "source prolog.sh"
-./prolog.sh
+echo "source ./prolog.sh"
+. prolog.sh
+#./prolog.sh
 
 deviceId_func
 check_locks_func
 
-echo "executing Prolog ..................."
+echo "executing Epilog ..................."
 ./epilog.sh
 
 

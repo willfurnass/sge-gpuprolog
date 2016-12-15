@@ -18,7 +18,7 @@ sge_o_host:                 sharc-node126
 account:                    sge
 cwd:                        /data/ac1tk/caffe_build_temp/opencv-3.1.0/release
 reserve:                    y
-hard resource_list:         gpu=3,h_vmem=16G,h_rt=86400
+hard resource_list:         gpu=1,h_vmem=16G,h_rt=86400
 mail_list:                  ac1tk@sharc-node126.shef.ac.uk
 notify:                     FALSE
 job_name:                   setup_caffe_sharc.sh
