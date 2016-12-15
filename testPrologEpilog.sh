@@ -13,6 +13,9 @@
 # The system will look for executables in current directory without a "./". 
 export PATH=$PATH:. 
 
+# setting NVIDIA sample path to check the number of visible devices, make sure to compile/build the deviceQuery before hand
+CUDA_SDK=~/NVIDIA_CUDA-8.0_Samples/1_Utilities/deviceQuery/
+
 
 JOB_ID=$1 # num gpus
 node_number=$2 # user defined
@@ -47,16 +50,14 @@ echo "START ...."
 export JOB_ID=$1 # num gpus
 export node_number=1 # user defined
 
-
 deviceId_func
 check_locks_func
 
 echo "executing Prolog ..................."
 echo "source ./prolog.sh"
 . prolog.sh
-#./prolog.sh
 
-deviceId_func
+~/NVIDIA_CUDA-8.0_Samples/1_Utilities/deviceQuery/deviceQuery  -noprompt | egrep "^Device"
 check_locks_func
 
 echo "executing Epilog ..................."

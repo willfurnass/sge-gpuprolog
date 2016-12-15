@@ -6,6 +6,7 @@
 # Startup script to allocate GPU devices.
 # Based on https://github.com/kyamagu/sge-gpuprolog
 #
+# IMPORTANT: You need to source this script (use . prolog.sh to run in bash). See testPrologEpilog.sh as an example.
 
 # Query how many gpus to allocate.Using qstat
 NGPUS=$(qstat -j $JOB_ID | \
@@ -61,4 +62,4 @@ SGE_GPU="$(echo $SGE_GPU | sed -e 's/^ //' | sed -e 's/ /,/g')" # seperating dev
 # IMPORTANT: You need to source this script (use source to execute it), so that the variable modified by the script will be available after the script completes
 export CUDA_VISIBLE_DEVICES=$SGE_GPU 
 
-exit 0
+#exit 0
