@@ -22,11 +22,13 @@ SGE_GPU=""
 # Counter for free devices that we have obtained a lock on
 i=0
 # Get a list of all device IDS which will be space seperated
+#   NB 'nvidia-smi -L' returns lines like
+#   GPU 0: Tesla P100-SXM2-16GB (UUID: GPU-e0fd54a5-16ce-5f57-b5c4-0ecebdd5a450)
 device_ids=$(nvidia-smi -L | cut -f1 -d":" | cut -f2 -d" " | xargs shuf -e)
 
 # Loop through the device IDs and check to see if a lock can be obtained for the device
 for device_id in $device_ids; do
-  # Lock file is specific for each ShARC node and each device combination ('node_number' is a SGE prolog variable)
+  # Lock file is specific for each ShARC node and each device combination
   lockfile="/tmp/sge-gpu/lock_device_${device_id}"
 
   # Use 'mkdir' to obtain a lock (will fail if file exists)
@@ -35,7 +37,8 @@ for device_id in $device_ids; do
     SGE_GPU="$SGE_GPU $device_id"
     # Increment i counter to reflect that we have obtained a GPU for the job
     i=$(expr $i + 1)
-    if [[ $i -ge $NGPUS ]]; then # check if reserved num gpus are greater than requested number of GPUS
+    # Check if reserved num gpus are greater than requested number of GPUS
+    if [[ $i -ge $NGPUS ]]; then 
       break
     fi
   fi

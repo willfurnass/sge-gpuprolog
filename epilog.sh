@@ -12,7 +12,7 @@ device_ids="$(echo $CUDA_VISIBLE_DEVICES | sed -e "s/,/ /g")"
 
 # Loop through through the device IDs and free the lockfile
 for device_id in $device_ids; do
-  # Lock file is specific for each ShARC node and each device combination (node_number is a SGE prolog variable)
+  # Lock file is specific for each ShARC node and each device combination
   lockfile="/tmp/sge-gpu/lock_device_${device_id}"
 
   # Check dir exists then remove the lockfile
