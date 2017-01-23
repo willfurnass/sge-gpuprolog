@@ -44,9 +44,13 @@ for device_id in $device_ids; do
   fi
 done
 
-# Check if reserved num GPUs are less than requested number of GPUS. 
+# If running this script as part of stand-alone tests (without Grid Engine) then
+# check if fewer GPUs were reserved than requested.
 # If this is true then there were not enough free devices for the job 
-# and the scheduling should fail
+# and the (dummy) scheduling should fail.
+# This logic is not needed if running this script as a Grid Engine prolog script 
+# as by the time this runs the scheduler has already checked 
+# that there are a sufficient number of free GPUs to satisfy the request.
 if [[ $i -lt $NGPUS ]]; then
   echo "ERROR: Only reserved $i of $NGPUS requested devices."
   exit 100
