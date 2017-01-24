@@ -40,6 +40,7 @@ This approach is based on [https://github.com/kyamagu/sge-gpuprolog](https://git
 Limitations
 -----------
 
+ * Does not work for sessions started with `qrsh` (or `qrshx`) as Grid Engine cannot manipulate the environment of such sessions to set `CUDA_VISIBLE_DEVICES`.
  * No mechanism to enable **over-subscription** (the sharing of a GPU resource between jobs).
  * GPUs tied to a job for the job's entire duration, which may or may not be an efficient use of resources depending on the workload.
  * Locks may need to be manually removed if anything goes wrong but
