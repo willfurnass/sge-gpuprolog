@@ -31,7 +31,7 @@ At the University of Sheffield we use these SoGE [queue **prolog** and **epilog*
     1. Convert the list (of assigned GPU indexes) into a comma-separated string.
     1. Writes `CUDA_VISIBLE_DEVICES=<index list>` into the `environment` file in the node-specific spool directory of the job.
 1. This file is then used to instantiate the environment of the resulting interactive (`qsh`) or batch (`qsub`) session.
-1. CUDA will then [only use GPUs whose indexes](http://www.softpanorama.org/HPC/Grid_engine/prolog_and_epilog_scripts.shtml) are in the comma-separated list in `$CUDA_VISIBLE_DEVICES`.
+1. The CUDA library will then [only be able to see the GPUs whose indexes](http://www.softpanorama.org/HPC/Grid_engine/prolog_and_epilog_scripts.shtml) are in the comma-separated list in `$CUDA_VISIBLE_DEVICES`.  
 
 When the job finishes, the complementary **epilog** script iterates over the indexes in the `$CUDA_VISIBLE_DEVICES` list and removes all the corresponding lock directories, allowing the corresponding GPUs to be used by queued/future jobs.
 
@@ -111,4 +111,8 @@ Request a `gpu` resource when you submit your job (explicitly selecting a queue 
 qsub -q gpu.q -l gpu=1 gpujob.sh
 ```
 
-The `CUDA_VISIBLE_DEVICES` environment variable should then be defined in the environment of the job, which contains a comma-delimited string of device indexes, such as `0` or `0,1,2`.  CUDA will then use to identify the subset of devices to be used.
+The `CUDA_VISIBLE_DEVICES` environment variable should then be defined in the environment of the job, which contains a comma-delimited string of device indexes, such as `0` or `0,1,2`.  
+
+The CUDA library will then only be able to see the devices with these indexes, which, from the API have been reindexed from 0.  For example, if within a `qsh` session `CUDA_VISIBLE_DEVICES=3,7` then one can call the `cudaSetDevice(0)` C function to use the first of the two assigned GPUs (original index of 3) or `cudaSetDevice(1)` to use the second (original index of 7).
+
+CUDA will then use to identify the subset of devices to be used.
