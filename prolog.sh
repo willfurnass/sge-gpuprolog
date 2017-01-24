@@ -29,7 +29,7 @@ device_ids=$(nvidia-smi -L | cut -f1 -d":" | cut -f2 -d" " | xargs shuf -e)
 # Loop through the device IDs and check to see if a lock can be obtained for the device
 for device_id in $device_ids; do
   # Lock file is specific for each ShARC node and each device combination
-  lockfile="/tmp/sge-gpu/lock_device_${device_id}"
+  lockfile="${SGE_GPU_LOCKS_DIR}/lock_device_${device_id}"
 
   # Use 'mkdir' to obtain a lock (will fail if file exists)
   if mkdir $lockfile; then 
