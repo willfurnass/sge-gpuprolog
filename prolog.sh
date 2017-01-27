@@ -32,7 +32,7 @@ for device_id in $device_ids; do
   lockfile="${SGE_GPU_LOCKS_DIR}/lock_device_${device_id}"
 
   # Use 'mkdir' to obtain a lock (will fail if file exists)
-  if mkdir $lockfile; then 
+  if mkdir $lockfile &> /dev/null; then 
     # We have obtained a lock so can have exclusive access to this GPU id. Add the ID to SGE_GPU
     SGE_GPU="$SGE_GPU $device_id"
     # Increment i counter to reflect that we have obtained a GPU for the job
