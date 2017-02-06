@@ -22,6 +22,7 @@ At the University of Sheffield we use these SoGE [queue **prolog** and **epilog*
 1. A user submits a job where he/she requests between 0 and $n$ GPUs.  This job is explicitly or implicitly assigned to an SoGE queue (e.g. `gpu.q`).
 1. Just before the job is started on a node the queue's custom **prolog** program runs **on that node**.  This:
     1. Queries the scheduler to determine the number of GPUs requested (then exits if that is <=0)
+    1. Scales this number by the number of slots requested if using a [SMP](https://en.wikipedia.org/wiki/Symmetric_multiprocessing) parallel environment called `smp`.
     1. Uses the `nvidia-smi` utility to discover the indexes of *all* GPUs on the node.
     1. For all indexes (shuffled) initialise a counter to 0 then: 
         1. Try to create a lock by using `mkdir` to create a directory containing the GPU index (`mkdir` is one of the operations that [UNIX/POSIX can do atomically](https://rcrowley.org/2010/01/06/things-unix-can-do-atomically.html)).
@@ -46,8 +47,8 @@ Limitations
  * Locks may need to be manually removed if anything goes wrong but
     * Writing them to a temporary filesystem ([`tmpfs`](https://en.wikipedia.org/wiki/Tmpfs)) will ensure locks do not persist across reboots.
     * There are mechanisms (e.g. [`systemd-tmpfiles`](https://www.freedesktop.org/software/systemd/man/systemd-tmpfiles.html)) that allow locks older than the maximum SoGE job run time to be automatically removed.
- * Does not presently work for multi-slot jobs on a single host ([SMP](https://en.wikipedia.org/wiki/Symmetric_multiprocessing)) (where the number of GPUs is configured to scale with the number of slots).
- * Does not presently work for (naturally multi-slot) [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface<Paste>) jobs.
+ * Does not presently work for multi-slot jobs on a single host  (where the number of GPUs is configured to scale with the number of slots).
+ * Does not presently work for [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface<Paste>) jobs or hybrid MPI+SMP jobs.
 
 Compatible versions
 -------------------

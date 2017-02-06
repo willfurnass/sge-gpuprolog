@@ -11,11 +11,15 @@ source /etc/profile.d/SoGE.sh
 # Query how many gpus to allocate (using qstat)
 NGPUS="$(qstat -j $JOB_ID | sed -n "s/hard resource_list:.*gpu=\([[:digit:]]\+\).*/\1/p")" || true
 
-# Exit if NGPUs is null
-[[ -z $NGPUS ]] && exit 0
+# Exit if NGPUs is null or <= 0
+[[ -z $NGPUS || $NGPUS -le 0 ]] && exit 0
 
-# Exit if NGPUS <= 0
-[[ $NGPUS -le 0 ]] && exit 0
+# Scale GPUs with number of requested cores if using the 'smp' Grid Engine Parallel Environment
+# (as the current scheduler configuration is for the 'gpu' countable complex consumable 
+# to scale with the number of requested slots)
+if [[ -n $PE && $PE == 'smp' && -n $NSLOTS && NSLOTS -gt 1 ]]; then
+    NGPUS=$(( $NGPUS * $NSLOTS ))
+fi
 
 # Allocate and lock GPUs. We will populate SGE_GPU with the device IDs that the job should use.
 SGE_GPU=""
