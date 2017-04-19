@@ -31,7 +31,7 @@ At the University of Sheffield we use these SoGE [queue **prolog** and **epilog*
     1. If the counter is less then the number of GPUs requested then put the job in an error state (**TODO**: after releasing all locks aquired within the 'for' loop).
     1. Convert the list (of assigned GPU indexes) into a comma-separated string.
     1. Writes `CUDA_VISIBLE_DEVICES=<index list>` into the `environment` file in the node-specific spool directory of the job.
-1. This file is then used to instantiate the environment of the resulting interactive (`qsh`) or batch (`qsub`) session.
+1. This file is then used to instantiate the environment of the resulting interactive (`qsh` or `qrshx`) or batch (`qsub`) session.
 1. The CUDA library will then [only be able to see the GPUs whose indexes](http://www.softpanorama.org/HPC/Grid_engine/prolog_and_epilog_scripts.shtml) are in the comma-separated list in `$CUDA_VISIBLE_DEVICES`.  
 
 When the job finishes, the complementary **epilog** script iterates over the indexes in the `$CUDA_VISIBLE_DEVICES` list and removes all the corresponding lock directories, allowing the corresponding GPUs to be used by queued/future jobs.
@@ -41,7 +41,8 @@ This approach is based on [https://github.com/kyamagu/sge-gpuprolog](https://git
 Limitations
 -----------
 
- * Does not work for sessions started with `qrsh` (or `qrshx`) as Grid Engine cannot manipulate the environment of such sessions to set `CUDA_VISIBLE_DEVICES`.
+ * Does not work for sessions started with `qrsh` as Grid Engine cannot manipulate the environment of such sessions to set `CUDA_VISIBLE_DEVICES`.
+    * However it does work with the [qrshx](https://gist.github.com/willfurnass/10277756070c4f374e6149a281324841) wrapper for `qrsh`
  * No mechanism to enable **over-subscription** (the sharing of a GPU resource between jobs).
  * GPUs tied to a job for the job's entire duration, which may or may not be an efficient use of resources depending on the workload.
  * Locks may need to be manually removed if anything goes wrong but
@@ -119,6 +120,6 @@ qsub -q gpu.q -l gpu=1 gpujob.sh
 
 The `CUDA_VISIBLE_DEVICES` environment variable should then be defined in the environment of the job, which contains a comma-delimited string of device indexes, such as `0` or `0,1,2`.  
 
-The CUDA library will then only be able to see the devices with these indexes, which, from the API have been reindexed from 0.  For example, if within a `qsh` session `CUDA_VISIBLE_DEVICES=3,7` then one can call the `cudaSetDevice(0)` C function to use the first of the two assigned GPUs (original index of 3) or `cudaSetDevice(1)` to use the second (original index of 7).
+The CUDA library will then only be able to see the devices with these indexes, which, from the API have been reindexed from 0.  For example, if within a `qrshx` session `CUDA_VISIBLE_DEVICES=3,7` then one can call the `cudaSetDevice(0)` C function to use the first of the two assigned GPUs (original index of 3) or `cudaSetDevice(1)` to use the second (original index of 7).
 
 CUDA will then use to identify the subset of devices to be used.
