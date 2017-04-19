@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Authors: Mozhgan Kabiri Chimeh, Paul Richmond, Will Furnass
-# Contact: m.kabiri-chimeh@sheffield.ac.uk
+# Contact: w.furnass@sheffield.ac.uk
 #
 # Sun Grid Engine prolog script to allocate GPU devices.
 # Based on https://github.com/kyamagu/sge-gpuprolog
@@ -11,7 +11,7 @@ source /etc/profile.d/SoGE.sh
 # Ensure SGE_GPU_LOCKS_DIR env var is set
 source /etc/profile.d/sge_gpu_locks.sh
 
-# Query how many gpus to allocate (using qstat)
+# Query how many gpus to allocate (for serial process or per SMP or MPI slot)
 NGPUS="$(qstat -j $JOB_ID | sed -n "s/hard resource_list:.*gpu=\([[:digit:]]\+\).*/\1/p")" || true
 
 # Exit if NGPUs is null or <= 0
