@@ -6,7 +6,10 @@
 # Sun Grid Engine prolog script to allocate GPU devices.
 # Based on https://github.com/kyamagu/sge-gpuprolog
 
+# Ensure various SGE env vars are set
 source /etc/profile.d/SoGE.sh
+# Ensure SGE_GPU_LOCKS_DIR env var is set
+source /etc/profile.d/sge_gpu_locks.sh
 
 # Query how many gpus to allocate (using qstat)
 NGPUS="$(qstat -j $JOB_ID | sed -n "s/hard resource_list:.*gpu=\([[:digit:]]\+\).*/\1/p")" || true

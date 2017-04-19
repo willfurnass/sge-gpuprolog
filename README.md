@@ -99,7 +99,7 @@ The `sge@` is important: it means that the prolog and epilog scripts will be run
 
 Next, check the permissions on the `prolog.sh` and `epilog.sh` files: they should be readable and executable by the `sge` user.
 
-Finally, ensure that the directory that will contain the lock files is present on all nodes.  This needs to be readable and writable by the `sge` user.  The prolog and epilog scripts learn of this path via the `SGE_GPU_LOCKS_DIR` environment variable.  On the University of Sheffield's ShARC cluster this is set in `/etc/profile.d/SoGE.sh` on all nodes.
+Finally, ensure that the directory that will contain the lock files is present on all nodes.  This needs to be readable and writable by the `sge` user.  The prolog and epilog scripts learn of this path via the `SGE_GPU_LOCKS_DIR` environment variable.  On the University of Sheffield's ShARC cluster this is set in `/etc/profile.d/sge_gpu_locks.sh` on all nodes.
 
 To ensure that locks are cleared after reboots and after a set duration (just longer than the longest possible job; 4 days at the time of writing) the `$SGE_GPU_LOCKS_DIR` is created with appropriate permissions at boot time by the [systemd-tmpfiles](https://www.freedesktop.org/software/systemd/man/systemd-tmpfiles.html) mechanism.  This is set up on all nodes using:
 

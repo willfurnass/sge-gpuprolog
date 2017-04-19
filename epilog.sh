@@ -5,7 +5,9 @@
 #
 # Sun Grid Engine Epilog script to free GPU lock files for devices used by a job.
 # Based on https://github.com/kyamagu/sge-gpuprolog
-#
+
+# Ensure SGE_GPU_LOCKS_DIR env var is set
+source /etc/profile.d/sge_gpu_locks.sh
 
 # Reformat the list of device ids used by the job (into space seperated)
 device_ids="$(echo $CUDA_VISIBLE_DEVICES | sed -e "s/,/ /g")"
