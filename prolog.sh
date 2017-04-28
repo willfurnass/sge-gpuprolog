@@ -28,10 +28,9 @@ fi
 SGE_GPU=""
 # Counter for free devices that we have obtained a lock on
 i=0
-# Get a list of all device IDS which will be space seperated
-#   NB 'nvidia-smi -L' returns lines like
-#   GPU 0: Tesla P100-SXM2-16GB (UUID: GPU-e0fd54a5-16ce-5f57-b5c4-0ecebdd5a450)
-device_ids=$(nvidia-smi -L | cut -f1 -d":" | cut -f2 -d" " | xargs shuf -e)
+# Get a list of all device IDS 
+# (don't use nvidia-smi as it is slow)
+device_ids=$(seq 0 $(( $(ls /proc/driver/nvidia/gpus/ | wc -l) -1 )) | shuf)
 
 # Loop through the device IDs and check to see if a lock can be obtained for the device
 for device_id in $device_ids; do

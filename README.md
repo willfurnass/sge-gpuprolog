@@ -23,8 +23,9 @@ At the University of Sheffield we use these SoGE [queue **prolog** and **epilog*
 1. Just before the job is started on a node the queue's custom **prolog** program runs **on that node**.  This:
     1. Queries the scheduler to determine the number of GPUs requested (then exits if that is <=0)
     1. Scales this number by the number of slots requested if using a [SMP](https://en.wikipedia.org/wiki/Symmetric_multiprocessing) parallel environment called `smp`.
-    1. Uses the `nvidia-smi` utility to discover the indexes of *all* GPUs on the node.
-    1. For all indexes (shuffled) initialise a counter to 0 then: 
+    1. Identifies the number of GPUs, N, by counting the subdirectories of `/proc/driver/nvidia/gpus/`.
+    1. Generates a list of GPU indexes (0..N-1) then shuffle the list.
+    1. Initialise a counter to 0 then for all indexes in that list: 
         1. Try to create a lock by using `mkdir` to create a directory containing the GPU index (`mkdir` is one of the operations that [UNIX/POSIX can do atomically](https://rcrowley.org/2010/01/06/things-unix-can-do-atomically.html)).
         1. If this suceeds append the index to a list and increment the counter.
         1. If the counter exceeds the number of GPUs requested then break out of the loop early.
