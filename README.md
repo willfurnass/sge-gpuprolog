@@ -17,7 +17,7 @@ By probing each GPU (by index) in turn Alice and Bob could try to identify GPUs 
 This approach
 -------------
 
-At the University of Sheffield we use these SoGE [queue **prolog** and **epilog**](http://www.softpanorama.org/HPC/Grid_engine/prolog_and_epilog_scripts.shtml) scripts to maintain a mapping between jobs and allocated NVIDIA GPUs.  This works as follows:
+At the University of Sheffield we use these SoGE [queue **prolog** and **epilog**](http://gridscheduler.sourceforge.net/htmlman/htmlman5/sge_conf.html) scripts to maintain a mapping between jobs and allocated NVIDIA GPUs.  This works as follows:
 
 1. A user submits a job where he/she requests between 0 and $n$ GPUs.  This job is explicitly or implicitly assigned to an SoGE queue (e.g. `gpu.q`).
 1. Just before the job is started on a node the queue's custom **prolog** program runs **on that node**.  This:
@@ -33,7 +33,7 @@ At the University of Sheffield we use these SoGE [queue **prolog** and **epilog*
     1. Convert the list (of assigned GPU indexes) into a comma-separated string.
     1. Writes `CUDA_VISIBLE_DEVICES=<index list>` into the `environment` file in the node-specific spool directory of the job.
 1. This file is then used to instantiate the environment of the resulting interactive (`qsh` or `qrshx`) or batch (`qsub`) session.
-1. The CUDA library will then [only be able to see the GPUs whose indexes](http://www.softpanorama.org/HPC/Grid_engine/prolog_and_epilog_scripts.shtml) are in the comma-separated list in `$CUDA_VISIBLE_DEVICES`.  
+1. The CUDA library will then only be able to see the GPUs whose indexes are in the comma-separated list in `$CUDA_VISIBLE_DEVICES`.  
 
 When the job finishes, the complementary **epilog** script iterates over the indexes in the `$CUDA_VISIBLE_DEVICES` list and removes all the corresponding lock directories, allowing the corresponding GPUs to be used by queued/future jobs.
 
