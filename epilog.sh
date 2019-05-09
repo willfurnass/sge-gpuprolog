@@ -1,25 +1,38 @@
 #!/bin/bash
-#
-# Authors: Mozhgan Kabiri Chimeh, Paul Richmond, Will Furnass
-# Contact: m.kabiri-chimeh@sheffield.ac.uk
-#
-# Sun Grid Engine Epilog script to free GPU lock files for devices used by a job.
-# Based on https://github.com/kyamagu/sge-gpuprolog
+LOCKDIR=/var/run/lock/cuda
+DEVMODE=0660
+DEVGROUP=root
+DEBUG=0
 
-# Ensure SGE_GPU_LOCKS_DIR env var is set
-source /etc/profile.d/sge_gpu_locks.sh
+if [[ "$SGE_TASK_ID" == "undefined" ]]; then
+    SGE_TASK_ID=1
+fi
+if [[ "$DEBUG" -ne 0 ]]; then
+  echo "Starting epilog $JOB_ID.${SGE_TASK_ID}" >> /tmp/epilog.log
+fi
 
-# Reformat the list of device ids used by the job (into space seperated)
-device_ids="$(echo $CUDA_VISIBLE_DEVICES | sed -e "s/,/ /g")"
+lockfiles="${LOCKDIR}/gpu*"
 
-# Loop through through the device IDs and free the lockfile
-for device_id in $device_ids; do
-  # Lock file is specific for each ShARC node and each device combination
-  lockfile="${SGE_GPU_LOCKS_DIR}/lock_device_${device_id}"
+if [[ "$DEBUG" -ne 0 ]]; then
+    echo "$lockfiles" >> /tmp/epilog.log
+fi
 
-  # Check dir exists then remove the lockfile
-  if [[ -d $lockfile ]]; then
-    rmdir $lockfile
-  fi
+for lock in $lockfiles; do
+    /usr/bin/grep " ${JOB_ID} ${SGE_TASK_ID} " "${lock}" >/dev/null 2>&1
+    if [[ $? -eq 0 ]]; then
+        minor=$(/usr/bin/cut -d' ' -f4 "${lock}")
+        locked=$(/usr/bin/cut -d' ' -f7 "${lock}")
+        # Release the lock
+        if [[ "${locked}" -eq 1 ]]; then
+            if [[ "$DEBUG" -ne 0 ]]; then
+                echo "Unlocking dev-special $minor" >> /tmp/epilog.log
+            fi
+            /usr/bin/chgrp ${DEVGROUP} "/dev/nvidia${minor}"
+            /usr/bin/chmod ${DEVMODE} "/dev/nvidia${minor}"
+        fi
+        if [[ "$DEBUG" -ne 0 ]]; then
+                echo "Unlocking lock file $lock" >> /tmp/epilog.log
+        fi
+        /usr/bin/rm -f "${lock}"
+    fi
 done
-#exit 0

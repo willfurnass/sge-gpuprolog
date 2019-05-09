@@ -1,4 +1,4 @@
-Copyright (c) 2015 Kota Yamaguchi
+Copyright (c) 2019 Wellcome Centre for Integrative Neuroscience (University of Oxford) and University of Sheffield
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

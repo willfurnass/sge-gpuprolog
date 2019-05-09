@@ -1,126 +1,78 @@
-Grid Engine + GPU prolog and epilog scripts
-===========================================
+# University of Sheffield GridEngine prolog/epilog for locking GPUs to jobs 
 
-Scripts to manage NVIDIA GPU devices in Grid Engine (tested with Son of Grid Engine 8.1.9).
+**Acknowledgements: derived from https://git.fmrib.ox.ac.uk/fmribitprojects/gridengine-scripts**
 
-Background
-----------
+To aid with the correct allocation of CUDA cards to jobs several tasks need to be carried out. 
+These are handled by the `fmrib_cuda_prolog.sh` and `fmrib_cuda_epilog.sh` scripts 
+which should be configured as pro/epilog scripts for GPU queues.
+These scripts should be put in a place visible to all cluster nodes 
+(e.g. `/opt/sge/default/common`) and made executable.
+The pro/epilogs should be added to GridEngine Queue definitions as:
 
-It is increasingly common for nodes in High-Performance Computing (HPC) clusters to be equipped with more than one GPU.  When users submit (interactive or batch) jobs to the scheduler software that manages resources on HPC clusters, the scheduler must be able to satisfy requests for 0 to $n$ GPUs, where $n$ is the most GPUs available on any node in the cluster.  
-
-The [(Son of) Grid Engine](https://arc.liv.ac.uk/SGE/) (SoGE) scheduler that we use on the University of Sheffield's [ShARC](http://docs.iceberg.shef.ac.uk/en/latest/sharc/index.html) cluster is very good at tracking the number of countable, consumable resources (e.g. GPUs) that are free on nodes but has no in-built mechanism for assigning particular resources to particular jobs.  The resulting effect is that multiple users/jobs may end up using the same GPU (in a time-sliced manner) even though other GPUs in the same node are unused.
-
-For example, say that only one node in a cluster contains GPUs (four of them) and that we define within SoGE's configuration a countable resource called `gpu` then define maximum values for it per node.  If Alice submits a job where she requests one GPU and then Bob requests a GPU then the scheduler knows that two out of four GPUs have been allocated.  However, neither user has been told _which_ to use so, potentially without realising it, both could use the GPU with 'index' 0 (the first using an invariant means of enumeration).
-
-By probing each GPU (by index) in turn Alice and Bob could try to identify GPUs that are not busy but this a horribly ad-hoc and unreliable approach.  What is required here is a mechanism by which Alice and Bob could be forced or instructed to use particular GPUs.  Other schedulers have suitable in-built mechanisms for managing mappings between jobs and countable, consumable resources: [SLURM](https://slurm.schedmd.com/) does, as does Univa's version of Grid Engine (thanks to the [RSMAP complex](http://gridengine.eu/grid-engine-internals/102-univa-grid-engine-810-features-part-2-better-resource-management-with-the-rsmap-complex-2012-05-25))
-
-This approach
--------------
-
-At the University of Sheffield we use these SoGE [queue **prolog** and **epilog**](http://gridscheduler.sourceforge.net/htmlman/htmlman5/sge_conf.html) scripts to maintain a mapping between jobs and allocated NVIDIA GPUs.  This works as follows:
-
-1. A user submits a job where he/she requests between 0 and $n$ GPUs.  This job is explicitly or implicitly assigned to an SoGE queue (e.g. `gpu.q`).
-1. Just before the job is started on a node the queue's custom **prolog** program runs **on that node**.  This:
-    1. Queries the scheduler to determine the number of GPUs requested (then exits if that is <=0)
-    1. Scales this number by the number of slots requested if using a [SMP](https://en.wikipedia.org/wiki/Symmetric_multiprocessing) parallel environment called `smp`.
-    1. Identifies the number of GPUs, N, by counting the subdirectories of `/proc/driver/nvidia/gpus/`.
-    1. Generates a list of GPU indexes (0..N-1) then shuffle the list.
-    1. Initialise a counter to 0 then for all indexes in that list: 
-        1. Try to create a lock by using `mkdir` to create a directory containing the GPU index (`mkdir` is one of the operations that [UNIX/POSIX can do atomically](https://rcrowley.org/2010/01/06/things-unix-can-do-atomically.html)).
-        1. If this suceeds append the index to a list and increment the counter.
-        1. If the counter exceeds the number of GPUs requested then break out of the loop early.
-    1. If the counter is less then the number of GPUs requested then put the job in an error state (**TODO**: after releasing all locks aquired within the 'for' loop).
-    1. Convert the list (of assigned GPU indexes) into a comma-separated string.
-    1. Writes `CUDA_VISIBLE_DEVICES=<index list>` into the `environment` file in the node-specific spool directory of the job.
-1. This file is then used to instantiate the environment of the resulting interactive (`qsh` or `qrshx`) or batch (`qsub`) session.
-1. The CUDA library will then only be able to see the GPUs whose indexes are in the comma-separated list in `$CUDA_VISIBLE_DEVICES`.  
-
-When the job finishes, the complementary **epilog** script iterates over the indexes in the `$CUDA_VISIBLE_DEVICES` list and removes all the corresponding lock directories, allowing the corresponding GPUs to be used by queued/future jobs.
-
-This approach is based on [https://github.com/kyamagu/sge-gpuprolog](https://github.com/kyamagu/sge-gpuprolog).
-
-Limitations
------------
-
- * Does not work for sessions started with `qrsh` as Grid Engine cannot manipulate the environment of such sessions to set `CUDA_VISIBLE_DEVICES`.
-    * However it does work with the [qrshx](https://gist.github.com/willfurnass/10277756070c4f374e6149a281324841) wrapper for `qrsh`
- * No mechanism to enable **over-subscription** (the sharing of a GPU resource between jobs).
- * GPUs tied to a job for the job's entire duration, which may or may not be an efficient use of resources depending on the workload.
- * Locks may need to be manually removed if anything goes wrong but
-    * Writing them to a temporary filesystem ([`tmpfs`](https://en.wikipedia.org/wiki/Tmpfs)) will ensure locks do not persist across reboots.
-    * There are mechanisms (e.g. [`systemd-tmpfiles`](https://www.freedesktop.org/software/systemd/man/systemd-tmpfiles.html)) that allow locks older than the maximum SoGE job run time to be automatically removed.
- * Does not presently work for multi-slot jobs on a single host  (where the number of GPUs is configured to scale with the number of slots).
- * Does not presently work for [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) jobs or hybrid MPI+SMP jobs.
-
-Compatible versions
--------------------
-
-Tested with Son of Grid Engine 8.1.9 but will most likely work with other versions.
-
-Installation
-------------
-
-First, set up a consumable complex `gpu`:
-
-```
-$ qconf -mc
+```bash
+root@/usr/local/sge/live/default/common/sharc_gpu_prolog.sh
+root@/usr/local/sge/live/default/common/sharc_gpu_epilog.sh
 ```
 
-then within an editor:
+It is essential they are run as root as only root can change the device special file permissions.
+
+Their mode of action is to enumerate all CUDA devices on the system then attempt to create a lock file for that device. 
+Assuming the lock file can be created then 
+the permissions on the CUDA device special file are set to group write/other no access and 
+the group is changed to the Grid Engine supplied job group such that 
+only jobs running under this shepherd can access the device. 
+CUDA is configured to enumerate devices in PCI address order and 
+then the `CUDA_VISIBLE_DEVICES` and `SGE_GPU` environment variables are set to contain 
+the comma-separated list of UUIDs for the cards available to the CUDA environment.
+
+To allow sharing of system resources between queue'd and non-queued tasks 
+it is possible to specify which GPUs will be used by the queues 
+in the file `/etc/sysconfig/cuda.conf` using the variable `grid_owned`. 
+Set this to a double-quoted string containing the space separated list of GPU minor numbers to use with the cluster, e.g. `grid_owned="0 1"`. 
+These are liable to change at reboot so care should be taken to ensure the appropriate numbers are given if GPUs are currently in use outside of the queues 
+(ideally reboot the system as the CUDA configuration script described below manages the ownership of these device special files).
+
+Should any of this setup fail the job will be rescheduled and the queue will be put into the error state.
+Post-job the device special files are left as group read/write, other hidden and group root such that non-queue controlled tasks cannot use them in the interim.
+
+For the device special file ownership mechanism to operate the NVIDIA kernel module must be instructed to not manage the permissions on these files. This is achieved by creating the file `/etc/modprobe.d/nvidia.conf` with the contents:
 
 ```
-#name               shortcut   type        relop   requestable consumable default  urgency
-#----------------------------------------------------------------------------------------------
-gpu                 gpu        INT         <=      YES         YES        0        0
+options nvidia NVreg_ModifyDeviceFiles=0
 ```
 
+The module must then be reloaded (or the machine rebooted), this can be done with:
 
-Add the `gpu` resource complex on each execution host in the cluster, specifying the number of GPUs available. For example:
-
-```
-$ qconf -aattr exechost complex_values gpu=1 node001
-```
-
-Set up `prolog` and `epilog` scripts for the relevant scheduler queue(s).  For example, for the `gpu.q` queue:
-
-```
-$ qconf -mq gpu.q
+```sh
+modprobe -r nvidia_uvm nvidia_drm nvidia_modeset nvidia
+modprobe nvidia nvidia_uvm nvidia_drm nvidia_modeset
 ```
 
-then within an editor ensure the `prolog` and `epilog` lines read:
+If you can't unload the `nvidia` module check that you don't have any monitoring system (e.g. Ganglia) that is utilising the module.
 
-```
-prolog                sge@/path/to/prolog.sh
-epilog                sge@/path/to/epilog.sh
-```
+In this mode the NVIDIA driver does not create the device special files needed to access the GPUs - it is necessary to create these on boot. 
+See https://git.fmrib.ox.ac.uk/ansible/cuda_configuration for an appropriate start-up script which does the equivalent of:
 
-The `sge@` is important: it means that the prolog and epilog scripts will be run as the `sge` user, not as the end-user, so:
-
-* the prolog script has the permissions to append to `$SGE_JOB_SPOOL_DIR/environment` and
-* the epilog script has the permissions to remove the lock directories created by the prolog script.
-
-Next, check the permissions on the `prolog.sh` and `epilog.sh` files: they should be readable and executable by the `sge` user.
-
-Finally, ensure that the directory that will contain the lock files is present on all nodes.  This needs to be readable and writable by the `sge` user.  The prolog and epilog scripts learn of this path via the `SGE_GPU_LOCKS_DIR` environment variable.  On the University of Sheffield's ShARC cluster this is set in `/etc/profile.d/sge_gpu_locks.sh` on all nodes.
-
-To ensure that locks are cleared after reboots and after a set duration (just longer than the longest possible job; 4 days at the time of writing) the `$SGE_GPU_LOCKS_DIR` is created with appropriate permissions at boot time by the [systemd-tmpfiles](https://www.freedesktop.org/software/systemd/man/systemd-tmpfiles.html) mechanism.  This is set up on all GPU-equipped nodes by 
-creating `/etc/tmpfiles.d/sge-gpu.conf` containing:
-
-```
-D /tmp/sge-gpu 0755 sge users 5d
+```sh
+mknod -Z -m 0660 /dev/nvidiax c 195 x
+mknod -Z -m 0666 /dev/nvidiactl c 195 255
+mknod -Z -m 0666 /dev/nvidia-uvm c 242 0
+mknod -Z -m 0666 /dev/nvidia-uvm-tools c 242 1
 ```
 
-Usage
------
+(where `x` is 0,1..., one for each GPU in system). If cards are to be made available to non-grid controlled processes then those that are dedicated to Grid Engine are hidden:
 
-Request a `gpu` resource when you submit your job (explicitly selecting a queue that uses these prolog and epilog scripts if an appropriate queue is not automatically selected by the scheduler by the user simply requesting a `gpu` resource).
-
-```
-qsub -q gpu.q -l gpu=1 gpujob.sh
+```sh
+chmod 0660 /dev/nvidiax
 ```
 
-The `CUDA_VISIBLE_DEVICES` environment variable should then be defined in the environment of the job, which contains a comma-delimited string of device indexes, such as `0` or `0,1,2`.  
+The designation of which GPUs are for cluster use is defined in `/etc/sysconfig/cuda.conf` using the variable `grid_owned` to a double-quoted string containing the space separated list of GPU minor numbers to use with the cluster, e.g. `grid_owned="0 1"`
 
-The CUDA library will then only be able to see the devices with these indexes, which, from the API have been reindexed from 0.  For example, if within a `qrshx` session `CUDA_VISIBLE_DEVICES=3,7` then one can call the `cudaSetDevice(0)` C function to use the first of the two assigned GPUs (original index of 3) or `cudaSetDevice(1)` to use the second (original index of 7).
+In addition to this a Grid Engine complex should be created:
 
-CUDA will then use to identify the subset of devices to be used.
+|Name   |Shortcut   |Type   |Relation   |Requestable    |Consumable |Default    |Urgency|
+|-------|-----------|-------|-----------|---------------|-----------|-----------|-------|
+|gpu    |gpu    |INT    |<= |YES    |JOB    |0  |0  |
+
+Then each CUDA node should be configured with this complex, holding a value equal to the number of GPU cards you wish to allocate to Grid managment.
+Once this is in place the CUDA tasks should request this complex.
